@@ -5,7 +5,20 @@ var express = require('./app/config/express');
 var db = mongoose();
 var app = express();
 
-var http = require('http').createServer(app);
 
-http.listen(config.PORT);
-console.log('App running at http://' + config.HOST + ':' + config.PORT + '/');
+// start server
+if (process.env.NODE_ENV === 'production') {
+    var https = require('https');
+    var fs = require('fs');
+    var serverOptions = {
+        ca: fs.readFileSync("/var/ssl/athandle/bundle.crt"),
+        key: fs.readFileSync('/var/ssl/athandle/server.key'),
+        cert: fs.readFileSync('/var/ssl/athandle/server.crt')
+    };
+    server = https.createServer(serverOptions, app);
+    server.listen(443);
+} else {
+    var http = require('http').createServer(app);
+    http.listen(config.PORT);
+    console.log('App running at http://' + config.HOST + ':' + config.PORT + '/');
+}
