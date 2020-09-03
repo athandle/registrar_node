@@ -4,7 +4,7 @@ const mongoose = require('mongoose'),
     timeStamp = require('mongoose-timestamp'),
     Schema = mongoose.Schema;
 
-let SwarmatsignSchema = new Schema({
+let ArchivedSwarmatsignSchema = new Schema({
     swarmId: {
         type: String,
         required: true
@@ -18,13 +18,11 @@ let SwarmatsignSchema = new Schema({
     },
     atsign: {
         type: String,
-        required: true,
-        unique: true,
+        required: true
     },
     secretkey: {
         type: String,
-        required: true,
-        unique: true,
+        required: true
     },
     status: {
         type: Boolean
@@ -34,8 +32,6 @@ let SwarmatsignSchema = new Schema({
     }
 });
 
-SwarmatsignSchema.index({ swarmId: 1, port: 1 }, { unique: true })
+ArchivedSwarmatsignSchema.plugin(timeStamp)
 
-SwarmatsignSchema.plugin(timeStamp)
-
-module.exports = mongoose.model('Swarmatsign', SwarmatsignSchema);
+module.exports = mongoose.model('ArchivedSwarmAtsign', ArchivedSwarmatsignSchema);

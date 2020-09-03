@@ -10,5 +10,6 @@ module.exports = function () {
 
     require('../modules/swarms/models/availableswarms.server.model');
     require('../modules/swarms/models/swarmatsign.server.model');
+    require('../modules/swarms/models/archivedswarmatsign.server.model');
     return db;
 }

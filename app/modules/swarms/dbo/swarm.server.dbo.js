@@ -1,6 +1,7 @@
 let mongoose = require('mongoose');
 let AvailableSwarm = require('./../models/availableswarms.server.model');
 let SwarmAtsign = require('./../models/swarmatsign.server.model');
+let ArchivedSwarmAtsign = require('./../models/archivedswarmatsign.server.model');
 const INITAL_PORT_FOR_SWARM = process.env.INITAL_PORT_FOR_SWARM || 1000;
 const MAX_ATTEMPT_COUNT = process.env.MAX_ATTEMPT_COUNT || 3;
 const MAX_PORT_PER_SYSTEM = process.env.MAX_PORT_PER_SYSTEM || 58000
@@ -54,7 +55,8 @@ const createPortForAtsign = async function (swarmId, port, atsign, data) {
         atsign,
         uuid: data.uuid || null,
         secretkey: data.secretkey || null,
-        status: 0
+        status: 0,
+        apiKey:data.apiKey || ''
       }
       const createdSwarmForAtsign = await SwarmAtsign.create(swarm);
       if (createdSwarmForAtsign) {
@@ -75,8 +77,28 @@ const createPortForAtsign = async function (swarmId, port, atsign, data) {
 
 }
 
+const deletePortForAtsign = async function(atsign,apiKey){
+  try{
+    const swarmByAtsign = await SwarmAtsign.findOne({atsign:atsign}).lean()
+    if(!swarmByAtsign){
+      return{error:{type:'info',message:'Invalid Atsign'}}
+    }
+    swarmByAtsign.apiKey = apiKey
+    delete swarmByAtsign._id
+    const deleteAtsignPromise = await Promise.all([SwarmAtsign.deleteOne({atsign:atsign}),ArchivedSwarmAtsign.create(swarmByAtsign)])
+    if(deleteAtsignPromise[0] && deleteAtsignPromise[1]){
+      return {value:swarmByAtsign}
+    }else{
+      return {error:{type:'info',message:'Something went wrong, please try again later.'}}
+    }
+  }catch(error){
+    return {error:{type:'error',message:'Something went wrong, please try again later.'}}
+  }
+}
+
 module.exports = {
   checkValidAtsign,
   getPortForAtsign,
-  createPortForAtsign
+  createPortForAtsign,
+  deletePortForAtsign
 }
