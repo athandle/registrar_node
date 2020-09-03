@@ -7,3 +7,10 @@ exports.indexResponse = function(req, res) {
         success: true
     });
 }
+exports.healthResponse = function(req, res) {
+    res.status(200).send({
+        messsage: 'API is healthy.',
+        success: true
+    });
+    
+}
