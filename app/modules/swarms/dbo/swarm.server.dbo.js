@@ -1,61 +1,81 @@
 let mongoose = require('mongoose');
-let AvailableSwarm = mongoose.model('availableswarm');
-let SwarmAtsign = mongoose.model('Swarmatsign');
-
-exports.checkValidAtsign = function (atsign) {
-  return true;
+let AvailableSwarm = require('./../models/availableswarms.server.model');
+let SwarmAtsign = require('./../models/swarmatsign.server.model');
+const INITAL_PORT_FOR_SWARM = process.env.INITAL_PORT_FOR_SWARM || 1000;
+const MAX_ATTEMPT_COUNT = process.env.MAX_ATTEMPT_COUNT || 3;
+const MAX_PORT_PER_SYSTEM = process.env.MAX_PORT_PER_SYSTEM || 1015
+const checkValidAtsign = function (atsign) {
+  return atsign ? true : false;
 }
-checkAvailablePort = function (initialValue) {
-  console.log(initialValue)
-  return new Promise(function (resolve, reject) {
-    SwarmAtsign.findOne({ port: initialValue }, function (err, result) {
-      console.log(result)
-      if (err) {
-        resolve();
-      } else if (!result) {
-        AvailableSwarm.findOne({ "blocked_ports": initialValue }, function (err, results) {
-          console.log(results)
-          if (err) {
-            resolve();
-          } else if (!results) {
-            let data = {};
-            data['port'] = initialValue;
-            AvailableSwarm.findOne({}, function (err, resultVal) {
-              data['swarm_id'] = resultVal.swarm_id;
-              console.log(data)
 
-              resolve(data);
-            })
-          } else {
-            initialValue += 1;
-            checkAvailablePort(initialValue);
-          }
-        })
-      } else {
-        initialValue += 1;
-        checkAvailablePort(initialValue);
+const getPortForAtsign = async function (atsign, data = {}, attemptCount = 1) {
+  try {
+    if (attemptCount <= MAX_ATTEMPT_COUNT) {
+      const swarmExist = await SwarmAtsign.findOne({ atsign: atsign }).lean();
+      if (swarmExist) return { value: swarmExist }
+
+      //Assign new Swarm
+      const availableSwarm = await AvailableSwarm.findOne({ isAvailableToUse: true })
+      if (!availableSwarm) return { error: { type: 'info', message: 'No swarm is available to use or all port utilized' } }
+
+      const swarmWithMaxPortNo = await SwarmAtsign.find({ swarmId: availableSwarm.swarmId }).sort({ port: -1 }).limit(1);
+      
+      let nextAssignablePort = swarmWithMaxPortNo[0] && swarmWithMaxPortNo[0].port ? swarmWithMaxPortNo[0].port+1 : INITAL_PORT_FOR_SWARM
+      while (availableSwarm.blockedPorts.indexOf(nextAssignablePort) !== -1) {
+        nextAssignablePort++;
+        if(nextAssignablePort > MAX_PORT_PER_SYSTEM ){
+          await AvailableSwarm.findOneAndUpdate({swarmId:availableSwarm.swarmId},{isAvailableToUse:false})
+          return getPortForAtsign(atsign,data,++attemptCount)
+        }
       }
-    });
-  })
-}
-exports.checkAvailablePort = checkAvailablePort;
-
-exports.assignSwarm = function (data, callback) {
-  let swarm = new SwarmAtsign();
-  swarm['atsign'] = data.atsign;
-  swarm['port'] = data.port;
-  swarm['swarm_id'] = data.swarm_id;
-  swarm['uuid'] = data.uuid;
-  swarm['status'] = 0;
-  swarm.save(function (err, result) {
-    var userData = result;
-    if (err) {
-      callback('Something went wrong');
-    } else if (!result) {
-      callback('Something went wrong');
+      if(nextAssignablePort > MAX_PORT_PER_SYSTEM ){
+        await AvailableSwarm.findOneAndUpdate({swarmId:availableSwarm.swarmId},{isAvailableToUse:false})
+        return getPortForAtsign(atsign,data,++attemptCount)
+      }
+      data['attemptCount'] = attemptCount;
+      return createPortForAtsign(availableSwarm.swarmId, nextAssignablePort, atsign, data)
     } else {
-      callback(null, userData);
+      return { error: { type: 'info', message: 'Maximum no of retries reached. Please try again later' } }
     }
-  });
+  } catch (error) {
+    return { error: { type: 'error', message: 'Something went wrong, please try again later.', data: error } }
+  }
+}
 
-};
+const createPortForAtsign = async function (swarmId, port, atsign, data) {
+  try {
+    if (!atsign || !data.uuid) {
+      return { error: { type: 'info', message: 'Required details are missing' } }
+    }
+    if (swarmId, port, atsign) {
+      const swarm = {
+        swarmId,
+        port,
+        atsign,
+        uuid: data.uuid || null,
+        status: 0
+      }
+      const createdSwarmForAtsign = await SwarmAtsign.create(swarm);
+      if (createdSwarmForAtsign) {
+        if(port >= MAX_PORT_PER_SYSTEM) AvailableSwarm.findOneAndUpdate({swarmId},{isAvailableToUse:false})
+        return { value: createdSwarmForAtsign }
+      } else {
+        return getPortForAtsign(atsign, data)
+      }
+    } else {
+      return getPortForAtsign(atsign, data, ++data.attemptCount)
+    }
+  } catch (error) {
+    if ( error && error.name == 'MongoError' &&error.code === 11000  ) {
+      return getPortForAtsign(atsign, data, ++data.attemptCount)
+    }
+    return { error: { type: 'error', message: 'Something went wrong, please try again later.', data: error } }
+  }
+
+}
+
+module.exports = {
+  checkValidAtsign,
+  getPortForAtsign,
+  createPortForAtsign
+}

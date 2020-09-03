@@ -1,34 +1,33 @@
 'use strict';
 
-var mongoose = require('mongoose'),
+const mongoose = require('mongoose'),
+    timeStamp = require('mongoose-timestamp'),
     Schema = mongoose.Schema;
-/**
- * Swarm @sign Schema
- */
-var SwarmatsignSchema = new Schema({
-    swarm_id: {
-        type: Number,
+
+let SwarmatsignSchema = new Schema({
+    swarmId: {
+        type: String,
         required: true
     },
     port: {
-        type: Number
+        type: Number,
+        required: true
     },
     uuid: {
         type: String
     },
     atsign: {
-        type: String
+        type: String,
+        required: true,
+        unique: true,
     },
     status: {
         type: Boolean
-    },
-    updated: {
-        type: Date
-    },
-    created: {
-        type: Date,
-        default: Date.now
     }
 });
 
-mongoose.model('Swarmatsign', SwarmatsignSchema);
+SwarmatsignSchema.index({ swarmId: 1, port: 1 }, { unique: true })
+
+SwarmatsignSchema.plugin(timeStamp)
+
+module.exports = mongoose.model('Swarmatsign', SwarmatsignSchema);

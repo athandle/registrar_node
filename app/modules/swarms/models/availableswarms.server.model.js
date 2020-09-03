@@ -1,25 +1,25 @@
 'use strict';
 
-var mongoose = require('mongoose'),
+const mongoose = require('mongoose'),
+  timeStamp = require('mongoose-timestamp'),
   Schema = mongoose.Schema;
 
-var availableSwarmSchema = new Schema({
-
-  swarm_id: {
-    type: Number,
+let availableSwarmSchema = new Schema({
+  swarmId: {
+    type: String,
     unique: true,
     required: true
   },
-  blocked_ports: {
-    type: Array
+  blockedPorts: {
+    type: [Number],
+    required: true
   },
-  updated: {
-    type: Date
-  },
-  created: {
-    type: Date,
-    default: Date.now
+  isAvailableToUse: {
+    type: Boolean,
+    default: true
   }
 });
 
-mongoose.model('availableswarm', availableSwarmSchema);
+availableSwarmSchema.plugin(timeStamp)
+
+module.exports = mongoose.model('availableswarm', availableSwarmSchema);
