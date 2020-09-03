@@ -3,7 +3,7 @@ let AvailableSwarm = require('./../models/availableswarms.server.model');
 let SwarmAtsign = require('./../models/swarmatsign.server.model');
 const INITAL_PORT_FOR_SWARM = process.env.INITAL_PORT_FOR_SWARM || 1000;
 const MAX_ATTEMPT_COUNT = process.env.MAX_ATTEMPT_COUNT || 3;
-const MAX_PORT_PER_SYSTEM = process.env.MAX_PORT_PER_SYSTEM || 1015
+const MAX_PORT_PER_SYSTEM = process.env.MAX_PORT_PER_SYSTEM || 58000
 const checkValidAtsign = function (atsign) {
   return atsign ? true : false;
 }
