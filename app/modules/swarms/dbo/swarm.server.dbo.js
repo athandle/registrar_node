@@ -32,7 +32,7 @@ const getPortForAtsign = async function (atsign, data = {}, attemptCount = 1) {
         await AvailableSwarm.findOneAndUpdate({swarmId:availableSwarm.swarmId},{isAvailableToUse:false})
         return getPortForAtsign(atsign,data,++attemptCount)
       }
-      data['attemptCount'] = attemptCount;
+      data['attemptCount'] = attemptCount;      
       return createPortForAtsign(availableSwarm.swarmId, nextAssignablePort, atsign, data)
     } else {
       return { error: { type: 'info', message: 'Maximum no of retries reached. Please try again later' } }
@@ -53,6 +53,7 @@ const createPortForAtsign = async function (swarmId, port, atsign, data) {
         port,
         atsign,
         uuid: data.uuid || null,
+        secretkey: data.secretkey || null,
         status: 0
       }
       const createdSwarmForAtsign = await SwarmAtsign.create(swarm);

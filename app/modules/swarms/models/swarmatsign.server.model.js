@@ -21,6 +21,11 @@ let SwarmatsignSchema = new Schema({
         required: true,
         unique: true,
     },
+    secretkey: {
+        type: String,
+        required: true,
+        unique: true,
+    },
     status: {
         type: Boolean
     }
