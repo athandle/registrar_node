@@ -1,4 +1,3 @@
-var config = require('./config');
 var express = require('express');
 var logger = require('morgan');
 var compress = require('compression');

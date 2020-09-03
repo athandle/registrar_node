@@ -1,9 +1,8 @@
 const SwarmDBO = require('../dbo/swarm.server.dbo');
-var config = require('../../../config/config');
-const e = require('express');
 const crypto = require('crypto');
 const QRCode = require('qrcode');
 const { v5: uuidv5 } = require('uuid');
+const logger = require('../../../logger/handleError')
  async function createQRCode(text) {
     const dataURL = await QRCode.toDataURL(text).catch((e) => console.error(e));
     
@@ -16,7 +15,7 @@ exports.assignSwarm = async function (req, res) {
     try {
         const authHeader = req.headers['authorization'];
         const token = authHeader && authHeader.split(' ')[0]
-        if (token == null || config.ACCESS_TOKEN_SECRET !== token) {
+        if (token == null || process.env.ACCESS_TOKEN_SECRET !== token) {
             return res.status(403).send({ auth: false, message: "Please provide valid token" });
         }
         let validAtSign = await SwarmDBO.checkValidAtsign(req.body.atsign);
@@ -31,8 +30,6 @@ exports.assignSwarm = async function (req, res) {
         const secretkey = crypto.createHmac('sha512', secret)
         .update(uuid)
         .digest('hex');
-        
-        
        const { error, value } = await SwarmDBO.getPortForAtsign(req.body.atsign, { uuid,secretkey })
        const QRcode = await createQRCode(secretkey);
        if (value) {
@@ -41,10 +38,12 @@ exports.assignSwarm = async function (req, res) {
             if (error.type === 'info') {
                 res.status(400).json({ message: error.message })
             } else {
+                logger(error.data,req)
                 res.status(500).json({ message: error.message })
             }
         }
     } catch (error) {
+        logger(error,req)
         res.status(500).json({ message: 'Something went wrong, please try again later.' })
     }
 

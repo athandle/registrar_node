@@ -1,4 +1,4 @@
-var config = require('./app/config/config');
+require('dotenv').config()
 var mongoose = require('./app/config/mongoose');
 var express = require('./app/config/express');
 
@@ -19,6 +19,6 @@ if (process.env.NODE_ENV === 'production') {
     server.listen(443);
 } else {
     var http = require('http').createServer(app);
-    http.listen(config.PORT);
-    console.log('App running at http://' + config.HOST + ':' + config.PORT + '/');
+    http.listen(process.env.PORT);
+    console.log('App running at http://' + process.env.HOST + ':' + process.env.PORT + '/');
 }
