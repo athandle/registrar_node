@@ -12,8 +12,11 @@ const checkValidAtsign = function (atsign) {
 const getPortForAtsign = async function (atsign, data = {}, attemptCount = 1) {
   try {
     if (attemptCount <= MAX_ATTEMPT_COUNT) {
-      const swarmExist = await SwarmAtsign.findOne({ atsign: atsign }).lean();
-      if (swarmExist) return { value: swarmExist }
+      let swarmExist = await SwarmAtsign.findOne({ atsign: atsign }).lean();
+      if (swarmExist) {
+        swarmExist['existing'] = true
+        return { value: swarmExist }
+      }
 
       //Assign new Swarm
       const availableSwarm = await AvailableSwarm.findOne({ isAvailableToUse: true })
