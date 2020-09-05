@@ -84,7 +84,12 @@ const deletePortForAtsign = async function(atsign,apiKey){
   try{
     const swarmByAtsign = await SwarmAtsign.findOne({atsign:atsign}).lean()
     if(!swarmByAtsign){
-      return{error:{type:'info',message:'Invalid Atsign'}}
+      const archivedSwarmByAtsign = await ArchivedSwarmAtsign.findOne({atsign:atsign}).sort({_id:-1}).lean()
+      if(archivedSwarmByAtsign){
+        return{value:archivedSwarmByAtsign}
+      }else{
+        return{error:{type:'info',message:'Invalid Atsign'}}
+      }
     }
     swarmByAtsign.apiKey = apiKey
     delete swarmByAtsign._id

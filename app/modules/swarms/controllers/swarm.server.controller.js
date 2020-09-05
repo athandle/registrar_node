@@ -28,7 +28,7 @@ exports.assignSwarm = async function (req, res) {
         req.body.atsign = req.body.atsign.toLowerCase().replace('@', '')
         
         const uuid = uuidv5(req.protocol + '://' + req.hostname + '' + req.url+'/'+req.body.atsign+'/'+Date.now(), uuidv5.URL); //need to change this
-        const secret = 'abcdefg';
+        const secret = process.env.SECRET;
         const secretkey = crypto.createHmac('sha512', secret)
             .update(uuid)
             .digest('hex');
@@ -60,13 +60,14 @@ exports.removeSwarm = async function (req, res) {
         if (token == null || process.env.ACCESS_TOKEN_SECRET.split(',').indexOf(token) == -1) {
             return res.status(401).send({ auth: false, message: "Please provide valid token" });
         }
-        let validAtSign = await SwarmDBO.checkValidAtsign(req.params.atsign);
+        let validAtSign = await SwarmDBO.checkValidAtsign(req.body.atsign);
         if (!validAtSign) {
             res.status(400).json({ message: 'Atsign is invalid' });
             return;
         }
-        req.params.atsign = req.params.atsign.toLowerCase().replace('@', '')
-        const { error, value } = await SwarmDBO.deletePortForAtsign(req.params.atsign, token)
+        
+        req.body.atsign = req.body.atsign.toLowerCase().replace('@', '')
+        const { error, value } = await SwarmDBO.deletePortForAtsign(req.body.atsign, token)
         if (value) {
             res.status(200).json({ message: 'Removed Successfully', data: value })
         } else {
