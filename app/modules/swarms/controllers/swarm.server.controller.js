@@ -26,8 +26,8 @@ exports.assignSwarm = async function (req, res) {
         req.body.atsign = req.body.atsign.toLowerCase().replace('@', '')
         
         const uuid = uuidv5(req.protocol + '://' + req.hostname + '' + req.url+'/'+req.body.atsign+'/'+Date.now(), uuidv5.URL); //need to change this
-        const secret = 'abcdefg';
-        const secretkey = crypto.createHmac('sha512', secret)
+        
+        const secretkey = crypto.createHmac('sha512', process.env.SHA_SECRET)
             .update(uuid)
             .digest('hex');
         const { error, value } = await SwarmDBO.getPortForAtsign(req.body.atsign, { uuid, secretkey, apiKey: token })

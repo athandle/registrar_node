@@ -3,6 +3,6 @@ var usersController = require('../controllers/swarm.server.controller');
 module.exports = function (app) {
     app.route('/api/assignswarm')
         .post(usersController.assignSwarm);
-    app.route('/api/removeswarm/:atsign')
+    app.route('/api/removesecondary/:atsign')
         .delete(usersController.removeSwarm);
 }
