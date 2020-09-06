@@ -2,7 +2,7 @@
 
 
 - This is an API built to start or stop new infrastructure(swarm) with respect to atsign
-- For any questions contact dylan.termolen@atsign.com or colin@atsign.com
+- For any questions contact ashish@atsign.com
 
 # Usage:
 * All requests must come with a header of `{"Authorization" : "Apikey"}`
