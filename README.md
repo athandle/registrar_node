@@ -9,9 +9,14 @@
 * 2 Routes
     * /api/assignswarm
         - This is a post API responsible for assigning swarmId & port for creating new infrastructure
-            Sample Request JSON {"atsign":"@tsign"} 
+        
+            Sample Request JSON
+            
+            {"atsign":"@tsign"} 
         - Response will be a json object 
+        
             Sample Response JSON 
+
             { 
                 message: 'Created Successfully',
                 data: {
@@ -31,9 +36,14 @@
             }
     * /api/removeswarm
         - This is a post API responsible for stopping existing infrastructure for given atsign
-            Sample Request JSON {"atsign":"@tsign"} 
+        
+            Sample Request JSON 
+            
+            {"atsign":"@tsign"} 
         - Response will be a json object
+        
             Sample Response JSON 
+
             { 
                 message: 'Removed Successfully',
                 data: {
@@ -50,7 +60,7 @@
                     "__v" : 0
                 }
             }
-        
+
     
 ### To Run Locally
 
