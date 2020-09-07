@@ -29,12 +29,11 @@ exports.assignSwarm = async function (req, res) {
         atSign = atSign.replace('@', '')
 
         const uuid = uuidv5(req.protocol + '://' + req.hostname + '' + req.url + '/' + atSign + '/' + Date.now(), uuidv5.URL); //need to change this
-
-        const secretkey = crypto.createHmac('sha512', process.env.SHA_SECRET)
+        const secretkey = crypto.createHmac('sha512', process.env.SECRET)
             .update(uuid)
             .digest('hex');
         const { error, value } = await SwarmDBO.getPortForAtsign(atSign, { uuid, secretkey, apiKey: token })
-        const QRcode = await createQRCode(`@${atsign}:${secretkey}`);
+        const QRcode = await createQRCode(`@${atSign}:${secretkey}`);
 
         if (value) {
             if (process.env.CREATE_INFRASTRUCTURE_URL && !value.existing) {
@@ -55,20 +54,22 @@ exports.assignSwarm = async function (req, res) {
     }
 }
 
-exports.removeSwarm = async function (req, res) {
+exports.removesecondary = async function (req, res) {
     try {
         const authHeader = req.headers['authorization'];
         const token = authHeader && authHeader.split(' ')[0]
         if (token == null || process.env.ACCESS_TOKEN_SECRET.split(',').indexOf(token) == -1) {
             return res.status(401).send({ auth: false, message: "Please provide valid token" });
         }
-        let validAtSign = await SwarmDBO.checkValidAtsign(req.params.atsign);
+        let atSign = req.body.atsign;
+        let validAtSign = await SwarmDBO.checkValidAtsign(atSign);
         if (!validAtSign) {
             res.status(400).json({ message: 'Atsign is invalid' });
             return;
         }
-        req.params.atsign = req.params.atsign.toLowerCase().replace('@', '')
-        const { error, value } = await SwarmDBO.deletePortForAtsign(req.params.atsign, token)
+
+        atSign = atSign.replace('@', '')
+        const { error, value } = await SwarmDBO.deletePortForAtsign(atSign, token)
         if (value) {
             res.status(200).json({ message: 'Removed Successfully', data: value })
         } else {
