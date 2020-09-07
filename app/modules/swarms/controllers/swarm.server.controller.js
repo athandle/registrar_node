@@ -20,23 +20,25 @@ exports.assignSwarm = async function (req, res) {
         if (token == null || process.env.ACCESS_TOKEN_SECRET.split(',').indexOf(token) == -1) {
             return res.status(401).send({ auth: false, message: "Please provide valid token" });
         }
-        let validAtSign = await SwarmDBO.checkValidAtsign(req.body.atsign);
+        let atSign = req.body.atsign;
+        let validAtSign = await SwarmDBO.checkValidAtsign(atSign);
         if (!validAtSign) {
             res.status(400).json({ message: 'Atsign is invalid' });
             return;
         }
-        req.body.atsign = req.body.atsign.toLowerCase().replace('@', '')
-        
-        const uuid = uuidv5(req.protocol + '://' + req.hostname + '' + req.url+'/'+req.body.atsign+'/'+Date.now(), uuidv5.URL); //need to change this
-        
+        atSign = atSign.replace('@', '')
+
+        const uuid = uuidv5(req.protocol + '://' + req.hostname + '' + req.url + '/' + atSign + '/' + Date.now(), uuidv5.URL); //need to change this
+
         const secretkey = crypto.createHmac('sha512', process.env.SHA_SECRET)
             .update(uuid)
             .digest('hex');
-        const { error, value } = await SwarmDBO.getPortForAtsign(req.body.atsign, { uuid, secretkey, apiKey: token })
-        const QRcode = await createQRCode(secretkey);
+        const { error, value } = await SwarmDBO.getPortForAtsign(atSign, { uuid, secretkey, apiKey: token })
+        const QRcode = await createQRCode(`@${atsign}:${secretkey}`);
+
         if (value) {
-            if(process.env.CREATE_INFRASTRUCTURE_URL && !value.existing){
-                const response  = await axios.post(process.env.CREATE_INFRASTRUCTURE_URL, {data: value, QRcode: QRcode},{ headers: {authorization:process.env.CREATE_INFRASTRUCTURE_TOKEN} })
+            if (process.env.CREATE_INFRASTRUCTURE_URL && !value.existing) {
+                const response = await axios.post(process.env.CREATE_INFRASTRUCTURE_URL, { data: value, QRcode: QRcode }, { headers: { authorization: process.env.CREATE_INFRASTRUCTURE_TOKEN } })
             }
             res.status(200).json({ message: 'Created Successfully', data: value, QRcode: QRcode })
         } else {
