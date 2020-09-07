@@ -85,3 +85,35 @@ exports.removesecondary = async function (req, res) {
         res.status(500).json({ message: 'Something went wrong, please try again later.' })
     }
 }
+
+exports.getAssignedSwarm = async function (req, res) {
+    try {
+        const authHeader = req.headers['authorization'];
+        const token = authHeader && authHeader.split(' ')[0]
+        if (token == null || process.env.ACCESS_TOKEN_SECRET.split(',').indexOf(token) == -1) {
+            return res.status(401).send({ auth: false, message: "Please provide valid token" });
+        }
+        let atSign = req.body.atsign;
+        let validAtSign = await SwarmDBO.checkValidAtsign(atSign);
+        if (!validAtSign) {
+            res.status(400).json({ message: 'Atsign is invalid' });
+            return;
+        }
+
+        atSign = atSign.replace('@', '')
+        const { error, value } = await SwarmDBO.getSwarnAtsign(atSign)
+        if (value) {
+            res.status(200).json({ message: 'Successfull', data: value })
+        } else {
+            if (error.type === 'info') {
+                res.status(400).json({ message: error.message })
+            } else {
+                logger(error.data, req)
+                res.status(500).json({ message: error.message })
+            }
+        }
+    } catch (error) {
+        logger(error, req)
+        res.status(500).json({ message: 'Something went wrong, please try again later.' })
+    }
+}

@@ -5,4 +5,6 @@ module.exports = function (app) {
         .post(usersController.assignSwarm);
     app.route('/api/removesecondary')
         .post(usersController.removesecondary);
+        app.route('/api/getsecondary')
+        .post(usersController.getAssignedSwarm);
 }

@@ -20,23 +20,23 @@ const getPortForAtsign = async function (atsign, data = {}, attemptCount = 1) {
 
       //Assign new Swarm
       const availableSwarm = await AvailableSwarm.findOne({ isAvailableToUse: true })
-      if (!availableSwarm) return { error: { type: 'info', message: 'No swarm is available to use or all port utilized' } }
+      if (!availableSwarm) return { error: { tyspe: 'info', message: 'No swarm is available to use or all port utilized' } }
 
       const swarmWithMaxPortNo = await SwarmAtsign.find({ swarmId: availableSwarm.swarmId }).sort({ port: -1 }).limit(1);
-      
-      let nextAssignablePort = swarmWithMaxPortNo[0] && swarmWithMaxPortNo[0].port ? swarmWithMaxPortNo[0].port+1 : INITAL_PORT_FOR_SWARM
+
+      let nextAssignablePort = swarmWithMaxPortNo[0] && swarmWithMaxPortNo[0].port ? swarmWithMaxPortNo[0].port + 1 : INITAL_PORT_FOR_SWARM
       while (availableSwarm.blockedPorts.indexOf(nextAssignablePort) !== -1) {
         nextAssignablePort++;
-        if(nextAssignablePort > MAX_PORT_PER_SYSTEM ){
-          await AvailableSwarm.findOneAndUpdate({swarmId:availableSwarm.swarmId},{isAvailableToUse:false})
-          return getPortForAtsign(atsign,data,++attemptCount)
+        if (nextAssignablePort > MAX_PORT_PER_SYSTEM) {
+          await AvailableSwarm.findOneAndUpdate({ swarmId: availableSwarm.swarmId }, { isAvailableToUse: false })
+          return getPortForAtsign(atsign, data, ++attemptCount)
         }
       }
-      if(nextAssignablePort > MAX_PORT_PER_SYSTEM ){
-        await AvailableSwarm.findOneAndUpdate({swarmId:availableSwarm.swarmId},{isAvailableToUse:false})
-        return getPortForAtsign(atsign,data,++attemptCount)
+      if (nextAssignablePort > MAX_PORT_PER_SYSTEM) {
+        await AvailableSwarm.findOneAndUpdate({ swarmId: availableSwarm.swarmId }, { isAvailableToUse: false })
+        return getPortForAtsign(atsign, data, ++attemptCount)
       }
-      data['attemptCount'] = attemptCount;      
+      data['attemptCount'] = attemptCount;
       return createPortForAtsign(availableSwarm.swarmId, nextAssignablePort, atsign, data)
     } else {
       return { error: { type: 'info', message: 'Maximum no of retries reached. Please try again later' } }
@@ -59,11 +59,11 @@ const createPortForAtsign = async function (swarmId, port, atsign, data) {
         uuid: data.uuid || null,
         secretkey: data.secretkey || null,
         status: 0,
-        apiKey:data.apiKey || ''
+        apiKey: data.apiKey || ''
       }
       const createdSwarmForAtsign = await SwarmAtsign.create(swarm);
       if (createdSwarmForAtsign) {
-        if(port >= MAX_PORT_PER_SYSTEM) AvailableSwarm.findOneAndUpdate({swarmId},{isAvailableToUse:false})
+        if (port >= MAX_PORT_PER_SYSTEM) AvailableSwarm.findOneAndUpdate({ swarmId }, { isAvailableToUse: false })
         return { value: createdSwarmForAtsign }
       } else {
         return getPortForAtsign(atsign, data)
@@ -72,7 +72,7 @@ const createPortForAtsign = async function (swarmId, port, atsign, data) {
       return getPortForAtsign(atsign, data, ++data.attemptCount)
     }
   } catch (error) {
-    if ( error && error.name == 'MongoError' &&error.code === 11000  ) {
+    if (error && error.name == 'MongoError' && error.code === 11000) {
       return getPortForAtsign(atsign, data, ++data.attemptCount)
     }
     return { error: { type: 'error', message: 'Something went wrong, please try again later.', data: error } }
@@ -80,27 +80,40 @@ const createPortForAtsign = async function (swarmId, port, atsign, data) {
 
 }
 
-const deletePortForAtsign = async function(atsign,apiKey){
-  try{
-    const swarmByAtsign = await SwarmAtsign.findOne({atsign:atsign}).lean()
-    if(!swarmByAtsign){
-      const archivedSwarmByAtsign = await ArchivedSwarmAtsign.findOne({atsign:atsign}).sort({_id:-1}).lean()
-      if(archivedSwarmByAtsign){
-        return{value:archivedSwarmByAtsign}
-      }else{
-        return{error:{type:'info',message:'Invalid Atsign'}}
+const deletePortForAtsign = async function (atsign, apiKey) {
+  try {
+    const swarmByAtsign = await SwarmAtsign.findOne({ atsign: atsign }).lean()
+    if (!swarmByAtsign) {
+      const archivedSwarmByAtsign = await ArchivedSwarmAtsign.findOne({ atsign: atsign }).sort({ _id: -1 }).lean()
+      if (archivedSwarmByAtsign) {
+        return { value: archivedSwarmByAtsign }
+      } else {
+        return { error: { type: 'info', message: 'Invalid Atsign' } }
       }
     }
     swarmByAtsign.apiKey = apiKey
     delete swarmByAtsign._id
-    const deleteAtsignPromise = await Promise.all([SwarmAtsign.deleteOne({atsign:atsign}),ArchivedSwarmAtsign.create(swarmByAtsign)])
-    if(deleteAtsignPromise[0] && deleteAtsignPromise[1]){
-      return {value:swarmByAtsign}
-    }else{
-      return {error:{type:'info',message:'Something went wrong, please try again later.'}}
+    const deleteAtsignPromise = await Promise.all([SwarmAtsign.deleteOne({ atsign: atsign }), ArchivedSwarmAtsign.create(swarmByAtsign)])
+    if (deleteAtsignPromise[0] && deleteAtsignPromise[1]) {
+      return { value: swarmByAtsign }
+    } else {
+      return { error: { type: 'info', message: 'Something went wrong, please try again later.' } }
     }
-  }catch(error){
-    return {error:{type:'error',message:'Something went wrong, please try again later.'}}
+  } catch (error) {
+    return { error: { type: 'error', message: 'Something went wrong, please try again later.' } }
+  }
+}
+
+const getSwarnAtsign = async function (atsign) {
+  try {
+    const swarmByAtsign = await SwarmAtsign.findOne({ atsign: atsign }).lean()
+    if (!swarmByAtsign) {
+      return { error: { type: 'info', message: 'Invalid atsign.' } }
+    } else {
+      return { value: swarmByAtsign }
+    }
+  } catch (error) {
+    return { error: { type: 'error', message: 'Something went wrong, please try again later.' } }
   }
 }
 
@@ -108,5 +121,6 @@ module.exports = {
   checkValidAtsign,
   getPortForAtsign,
   createPortForAtsign,
-  deletePortForAtsign
+  deletePortForAtsign,
+  getSwarnAtsign
 }
